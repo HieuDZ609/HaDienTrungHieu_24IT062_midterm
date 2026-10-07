@@ -20,7 +20,7 @@ DEPS    := $(OBJS:.o=.d)
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -29,4 +29,5 @@ clean:
 	rm -f $(TARGET) $(OBJS) $(DEPS)
 
 # Header dependencies discovered by -MMD, so editing a .h rebuilds its users.
+# (bmake on NetBSD has no $^, so the link rule spells $(OBJS) out instead.)
 -include $(DEPS)
