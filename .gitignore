@@ -1,0 +1,15 @@
+# Compiled objects and dependency files produced by the Makefile
+*.o
+*.d
+
+# The binary itself
+/myls
+myls
+
+# Core dumps, editor swap files and other local noise
+core
+core.*
+*.swp
+*.swo
+*~
+
