@@ -299,6 +299,43 @@ Every one of these is a point where the assignment's manual page states
 something that the system `ls` does not do.
 
 
+## Building and testing on NetBSD
+
+Verified with a **NetBSD 10.2 (amd64)** installation, using the system
+`gcc` 10.5.0 and `bmake` (installed as `/usr/bin/make`) — the same `make`
+command builds on Linux and on NetBSD:
+
+```sh
+make            # './myls'
+make clean
+./myls /some/dir
+```
+
+The `tests/compare.sh` harness is written for Linux (it uses `bash`,
+`stat -c` and `touch -d`, none of which NetBSD ships), so on the BSD side a
+manual differential battery was run instead: `./myls` against `/bin/ls`
+over a fixture tree of plain files, directories, symlinks (valid and
+dangling), hard links, a FIFO and files with distinct sizes, timestamps and
+permissions.  The two programs agreed **byte for byte** on the single-option
+cases `a A d F f h i k q r s S t u w` and on `-ast`.
+
+A few divergences remain against NetBSD's own `ls(1)`.  All of them are
+cosmetic ordering or spacing, or combinations where `myls` follows the
+assignment's manual — which usually lands on GNU's side whenever NetBSD's
+`ls` and GNU's `ls` disagree:
+
+| case | NetBSD `/bin/ls` | `myls` | why |
+| --- | --- | --- | --- |
+| `-l`, `-n` | padded columns (`  1 tester  users  5120 …`) | single-space columns | the manual does not fix the column widths; `myls` uses GNU's spacing |
+| `-R` on a single directory | no leading `dir:` header | prints `dir:` | `myls` matches GNU's recursive header; NetBSD prints the header only for sub-directories |
+| `-S` with equal sizes | sorts the ties by name | keeps directory order | the manual does not define the tie-break, and GNU does not either |
+| `-f -A` / `-fr` | NetBSD's `-f` overrides `-A` (lists every entry, `-r` reverses the unfiltered list) | `-A` stays enabled, `-r` reverses the filtered list | `myls` matches GNU's combination semantics |
+| `-1` | one column | rejected | NetBSD extension; the manual lists no `-1`, so it is outside the assignment's option set |
+
+The `-t`/`-r` sort families and `-S` by size alone behaved exactly like the
+system `ls`, and `-w` printed the raw unframed listing the manual demands.
+
+
 ## Repository
 
 * https://github.com/HieuDZ609/HaDienTrungHieu_24IT062_midterm
