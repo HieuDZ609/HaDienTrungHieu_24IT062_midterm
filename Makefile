@@ -1,12 +1,12 @@
-# Makefile for the simplified ls(1) implementation.
+# Makefile cho bản cài đặt ls(1) đơn giản hóa.
 #
-#   make        build ./myls
-#   make clean  remove every generated file
+#   make        dựng ./myls
+#   make clean  xóa mọi file đã sinh
 
 CC      := gcc
-# -D_NETBSD_SOURCE: with _POSIX_C_SOURCE defined, NetBSD's <sys/types.h>
-# otherwise hides major(), minor(), S_IFMT and S_ISVTX.  On glibc the macro
-# is simply ignored, so the same flags build on both systems.
+# -D_NETBSD_SOURCE: khi đã khai báo _POSIX_C_SOURCE, NetBSD <sys/types.h>
+# còn giấu major(), minor(), S_IFMT và S_ISVTX. Trên glibc macro này chỉ
+# bị bỏ qua, nên cùng cờ này dựng được trên cả hai hệ.
 CFLAGS  := -std=c11 -Wall -Wextra -Werror -O2 -g -MMD -MP \
            -D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=200809L -D_NETBSD_SOURCE
 LDFLAGS :=
@@ -28,6 +28,7 @@ $(TARGET): $(OBJS)
 clean:
 	rm -f $(TARGET) $(OBJS) $(DEPS)
 
-# Header dependencies discovered by -MMD, so editing a .h rebuilds its users.
-# (bmake on NetBSD has no $^, so the link rule spells $(OBJS) out instead.)
+# Phụ thuộc header do -MMD sinh ra, nên sửa một .h sẽ dựng lại các nguồn
+# dùng nó. (bmake trên NetBSD không có $^, nên rule link viết tường minh
+# $(OBJS) thay vì $^.)
 -include $(DEPS)

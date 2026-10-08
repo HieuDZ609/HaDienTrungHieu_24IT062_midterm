@@ -1,5 +1,5 @@
 /*
- * sort.h -- ordering of the collected entries.
+ * sort.h -- thứ tự của các mục đã thu thập.
  */
 
 #ifndef LS_SORT_H
@@ -8,11 +8,10 @@
 #include "ls_types.h"
 
 /*
- * Sort list in place according to opt.  The default order is lexicographical
- * on the name; -t makes the timestamp primary with the name as the tie
- * breaker, -S makes the size primary and keeps the input order for equal
- * sizes, and -f leaves the readdir() order alone.  -r reverses whatever
- * order was produced, equal keys included.
+ * Sắp xếp list theo opt. Mặc định theo từ điển trên tên; -t lấy timestamp
+ * làm khóa chính còn tên là khóa phụ, -S lấy size làm khóa chính và giữ
+ * thứ tự đọc cho size bằng nhau, -f giữ nguyên thứ tự readdir(). -r đảo
+ * ngược kết quả, kể cả các phần bằng nhau.
  */
 void ls_sort_entries(ls_list_t *list, const ls_options_t *opt);
 

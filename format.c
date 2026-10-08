@@ -1,8 +1,7 @@
 /*
- * format.c -- laying out the entries on stdout.
- *
- * Column widths are derived from the entries that are actually printed, so
- * the numeric fields of the long format line up without fixed guesswork.
+ * format.c -- dàn các mục trên stdout.
+ * Bề rộng cột suy từ chính các mục được in, nên các trường số của format
+ * dài canh thẳng hàng mà không cần đoán cố định.
  */
 
 #include "format.h"
@@ -15,7 +14,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-/* Width of every optional column, measured over the current listing. */
+/* Bề rộng mỗi cột tùy chọn, đo trên listing hiện tại. */
 typedef struct {
     unsigned int inode;
     unsigned int blocks;
@@ -25,7 +24,7 @@ typedef struct {
     unsigned int size;
 } ls_widths_t;
 
-/* Number of decimal digits needed to print value. */
+/* Số chữ số thập phân cần để in value. */
 static unsigned int ls_digits(unsigned long long value)
 {
     unsigned int digits = 1;
@@ -37,16 +36,14 @@ static unsigned int ls_digits(unsigned long long value)
     return digits;
 }
 
-/* A byte is printable unless it is a C0 control character or DEL. */
+/* Một byte in được trừ khi là điều khiển C0 hoặc DEL. */
 static int ls_is_printable(unsigned char c)
 {
     return c >= 0x20 && c != 0x7f;
 }
 
-/*
- * Emit a file name honouring -q and -w.  Bytes above 0x7f are passed through
- * so that UTF-8 names stay intact when the output is a terminal.
- */
+/* In tên tôn trọng -q và -w. Byte trên 0x7f được thông qua để tên UTF-8
+ * còn nguyên khi output là terminal. */
 static void ls_print_name(const char *name, ls_raw_mode_t raw)
 {
     const unsigned char *p;
@@ -60,7 +57,7 @@ static void ls_print_name(const char *name, ls_raw_mode_t raw)
         putchar(ls_is_printable(*p) ? *p : '?');
 }
 
-/* Read the target of a symbolic link, growing the buffer as needed. */
+/* Đọc đích của symlink, tăng buffer khi cần. */
 static char *ls_read_link(const char *path)
 {
     size_t capacity = 128;
@@ -138,7 +135,7 @@ static void ls_compute_widths(const ls_list_t *list, const ls_options_t *opt,
             widths->size = digits;
     }
 
-    /* Never emit a zero width conversion; it would drop the column. */
+    /* Không bao giờ in độ rộng 0; nó làm mất cột. */
     if (opt->print_inode && widths->inode == 0)
         widths->inode = 1;
     if (opt->print_blocks && widths->blocks == 0)
@@ -155,7 +152,7 @@ static void ls_compute_widths(const ls_list_t *list, const ls_options_t *opt,
     }
 }
 
-/* One row: [-i] [-s] [-l] name [-F suffix] [-l " -> target"]. */
+/* Một dòng: [-i] [-s] [-l] tên [-F hậu tố] [-l " -> đích"]. */
 static void ls_print_one(const ls_entry_t *entry, const ls_options_t *opt,
                          const ls_widths_t *widths, bool newline)
 {
@@ -201,8 +198,8 @@ static void ls_print_one(const ls_entry_t *entry, const ls_options_t *opt,
     }
 
     /*
-     * "If the file is a symbolic link the pathname of the linked-to file is
-     * preceded by '->'."
+     * "Nếu file là symlink, đường dẫn của file được trỏ tới được đặt trước
+     * bởi '->'."
      */
     if (long_format && S_ISLNK(entry->st.st_mode)) {
         char *target = ls_read_link(entry->path);
@@ -218,7 +215,7 @@ static void ls_print_one(const ls_entry_t *entry, const ls_options_t *opt,
         putchar('\n');
 }
 
-/* Width of one entry exactly as ls_print_one() writes it. */
+/* Bề rộng một mục đúng như ls_print_one() viết. */
 static size_t ls_entry_width(const ls_entry_t *entry, const ls_options_t *opt,
                              const ls_widths_t *widths)
 {
@@ -239,7 +236,7 @@ static size_t ls_entry_width(const ls_entry_t *entry, const ls_options_t *opt,
     return width;
 }
 
-/* The width of the terminal the listing is being written to. */
+/* Bề rộng terminal mà listing đang được viết vào. */
 static unsigned int ls_term_width(void)
 {
     struct winsize ws;
@@ -261,11 +258,10 @@ static unsigned int ls_term_width(void)
 }
 
 /*
- * A short listing written to a terminal: entries fill the columns from the
- * top down, every column is padded to the widest entry it holds, and two
- * spaces separate the columns.  The manual does not describe the layout, so
- * it follows ls(1) itself; anything that is not a terminal keeps the plain
- * one-entry-per-line listing above.
+ * Listing ngắn viết ra terminal: các mục đổ đầy cột từ trên xuống, mỗi cột
+ * canh theo mục rộng nhất, giữa cột cách hai space. Man page không mô tả
+ * cách dàn này, nên theo chính ls(1); không phải terminal thì giữ kiểu một
+ * mục mỗi dòng ở trên.
  */
 static void ls_print_columns(const ls_list_t *list, const ls_options_t *opt,
                              const ls_widths_t *widths)
@@ -296,7 +292,7 @@ static void ls_print_columns(const ls_list_t *list, const ls_options_t *opt,
 
     screen = ls_term_width();
 
-    /* Widen by one column at a time for as long as the listing fits. */
+    /* Nới rộng mỗi lần một cột, chừng nào listing còn vừa. */
     for (ncol_try = 1; ncol_try <= n; ncol_try++) {
         size_t nrow_try = (n + ncol_try - 1) / ncol_try;
         size_t total = 0;
@@ -349,7 +345,7 @@ static void ls_print_columns(const ls_list_t *list, const ls_options_t *opt,
 
             ls_print_one(&list->items[index], opt, widths, false);
 
-            /* The last cell of a row is never padded. */
+            /* Ô cuối một hàng không bao giờ được đệm. */
             if ((col + 1) * nrow + row < n) {
                 size_t pad = colw[col] - cellw[index] + 2;
 
@@ -364,7 +360,7 @@ static void ls_print_columns(const ls_list_t *list, const ls_options_t *opt,
     free(cellw);
 }
 
-/* The "total N" line that precedes a directory listing. */
+/* Dòng "total N" đứng trước một listing thư mục. */
 static void ls_print_total(const ls_list_t *list, const ls_options_t *opt)
 {
     unsigned long long bytes = 0;
@@ -390,10 +386,10 @@ void ls_print_entries(const ls_list_t *list, const ls_options_t *opt,
     ls_compute_widths(list, opt, &widths);
 
     if (is_dir_listing) {
-        /* -l always reports the block total of a directory it prints. */
+        /* -l luôn báo tổng khối của thư mục mà nó in. */
         if (opt->format != FORMAT_SHORT)
             want_total = true;
-        /* "-s ... If the output is to a terminal, a total sum ..." */
+        /* "-s ... Nếu output ra terminal, một tổng ..." */
         else if (opt->print_blocks && isatty(STDOUT_FILENO))
             want_total = true;
     }

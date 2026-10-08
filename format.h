@@ -1,5 +1,5 @@
 /*
- * format.h -- laying out the entries on stdout.
+ * format.h -- dàn mục in ra stdout.
  */
 
 #ifndef LS_FORMAT_H
@@ -8,11 +8,10 @@
 #include "ls_types.h"
 
 /*
- * Print every entry of list.
+ * In mọi mục của list.
  *
- * is_dir_listing tells the routine that the entries are the contents of a
- * directory, which is what triggers the "total N" line: always for -l/-n,
- * and for -s only when the output goes to a terminal.
+ * is_dir_listing = true nghĩa là các mục là nội dung một thư mục, kích hoạt
+ * dòng "total N": luôn với -l/-n, và với -s chỉ khi output ra terminal.
  */
 void ls_print_entries(const ls_list_t *list, const ls_options_t *opt,
                       bool is_dir_listing);

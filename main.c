@@ -1,16 +1,16 @@
 /*
- * main.c -- orchestration for the simplified ls(1).
+ * main.c -- điều phối cho ls(1) đơn giản hóa.
  *
- * The flow follows the DESCRIPTION section of the manual:
+ * Luồng đi theo mục DESCRIPTION của man page:
  *
- *   1. parse the options,
- *   2. split the operands into non-directories and directories,
- *   3. print the non-directory operands first, sorted on their own,
- *   4. print every directory operand, sorted on its own, and with -R walk
- *      each operand's tree depth first before moving to the next operand.
+ *   1. parse option,
+ *   2. tách operand thành không-thư-mục và thư-mục,
+ *   3. in operand không-thư-mục trước, tự sắp xếp riêng,
+ *   4. in từng operand thư-mục, tự sắp riêng; với -R đi sâu từng cây của
+ *      mỗi operand theo chiều sâu trước khi sang operand kế.
  *
- * The depth first walk runs off an explicit stack rather than through the C
- * call stack, so a pathological directory tree cannot overflow it.
+ * Cây đi theo stack tường minh thay vì call stack của C, nên cây thư mục
+ * bệnh lý đến đâu cũng không thể tràn.
  */
 
 #include "format.h"
@@ -28,20 +28,19 @@
 #include <string.h>
 #include <unistd.h>
 
-/* State shared by all directory listings of a single run. */
+/* Trạng thái dùng chung cho mọi listing thư mục trong một lần chạy. */
 typedef struct {
     const ls_options_t *opt;
-    bool headers; /* print "path:" in front of each listing */
-    bool printed; /* at least one line has already been written */
-    int  status;  /* 0 = success, 1 = minor problem, 2 = failure */
+    bool headers; /* in "path:" trước mỗi listing         */
+    bool printed; /* đã có ít nhất một dòng được viết ra    */
+    int  status;  /* 0 = thành công, 1 = lỗi nhỏ, 2 = lỗi   */
 } ls_run_t;
 
 /*
- * Report a failure and remember how bad it was.  A command line operand that
- * could not be used is a real failure (status 2); a directory that only went
- * missing half way through the walk is a minor problem (status 1).  The
- * worst status seen wins, except that a minor problem never downgrades an
- * already serious one.
+ * Báo một lỗi và ghi nhận mức tồi tệ nhất. Operand trái lệnh dùng không
+ * được là lỗi thật (status 2); thư mục biến mất giữa chừng khi duyệt là
+ * lỗi nhỏ (1). Mức tồi nhất thắng, ngoại trừ lỗi nhỏ không hạ cấp lỗi
+ * đã là nghiêm trọng.
  */
 static void ls_run_fail(ls_run_t *run, bool serious)
 {
@@ -51,7 +50,7 @@ static void ls_run_fail(ls_run_t *run, bool serious)
         run->status = 1;
 }
 
-/* One entry of the -R work queue: the path plus where it came from. */
+/* Một mục của hàng đợi -R: đường dẫn và nơi nó đến. */
 typedef struct {
     char *path;
     bool  from_operand;
@@ -108,9 +107,9 @@ static void ls_queue_free(ls_queue_t *queue)
 }
 
 /*
- * Print one directory: read it, announce it, lay it out and queue its
- * sub-directories.  The directory is opened before the header is written,
- * because a listing that could not be opened must not be announced.
+ * In một thư mục: đọc nó, thông báo nó, dàn trang và xếp các thư mục con.
+ * Thư mục được mở TRƯỚC khi viết header, vì listing không mở được thì
+ * không được thông báo.
  */
 static void ls_show_directory(ls_run_t *run, ls_queue_t *queue,
                               const char *dirpath, bool from_operand)
@@ -138,15 +137,14 @@ static void ls_show_directory(ls_run_t *run, ls_queue_t *queue,
 
     if (run->opt->list_mode == LIST_RECURSE) {
         /*
-         * The sub-directories are opened once before anything descends into
-         * them, walking the listing backwards, so that every "cannot open
-         * directory" diagnostic is emitted right after the parent listing
-         * rather than in the middle of the children.  Doing the walk in
-         * reverse lets the successful probes be queued at the same time:
-         * the stack pops them in listing order afterwards.  "." and ".."
-         * are never queued, otherwise a listing that shows them would
-         * descend into itself forever, and a symbolic link is never probed
-         * because only a real directory can be opened.
+         * Các thư mục con được mở thử một loạt trước khi đi sâu bất kỳ
+         * thư mục nào, duyệt listing ngược, để mọi chẩn đoán "cannot open
+         * directory" được in ngay sau listing cha chứ không lẫn vào giữa
+         * các con. Duyệt ngược cho phép các thăm dò thành công được xếp
+         * vào hàng đợi cùng lúc: stack lấy ra sau đó đúng thứ tự listing.
+         * "." và ".." không bao giờ được xếp, nếu không một listing hiện
+         * chúng sẽ tự đi sâu vào chính nó vô hạn; symlink không được thăm
+         * dò vì chỉ thư mục thật mới mở được.
          */
         for (i = list.len; i-- > 0;) {
             const ls_entry_t *entry = &list.items[i];
@@ -173,19 +171,17 @@ static void ls_show_directory(ls_run_t *run, ls_queue_t *queue,
     ls_list_free(&list);
 }
 
-/*
- * Decide whether an operand names a directory we should descend into.  With
- * -d the operand is always printed as a plain file and symbolic links in the
- * argument list are never indirected through.
+/* Quyết định một operand có phải thư mục để đi xuống. Với -d operand luôn
+ * được in như file thường, và symlink trong danh sách đối số không bao giờ
+ * được thông qua.
  */
 /*
- * A symbolic link named on the command line is indirected through only when
- * the listing is neither long (-l/-n), nor a plain directory listing (-d),
- * nor typed (-F); otherwise the link itself is what gets printed.  NetBSD's
- * ls states this in a comment of its own ("If not -F, -d or -l options,
- * follow any symbolic links listed on the command line") and GNU ls derives
- * the same condition from `format == long_format || indicator_style ==
- * classify || immediate_dirs'.
+ * Symlink được nêu trên dòng lệnh chỉ được "thông qua" khi listing không
+ * dài (-l/-n), không phải thư mục trần (-d), và không gắn loại (-F); còn
+ * lại thì in chính cái link. NetBSD ghi điều này trong comment riêng ("If
+ * not -F, -d or -l options, follow any symbolic links listed on the command
+ * line") và GNU suy cùng điều kiện từ `format == long_format ||
+ * indicator_style == classify || immediate_dirs'.
  */
 static bool ls_follow_operand(const ls_options_t *opt)
 {
@@ -211,10 +207,9 @@ static void ls_classify_operand(const char *path, const ls_options_t *opt,
     }
 
     /*
-     * Follow the link only when it really leads to a directory.  A link to a
-     * regular file is printed as a link (with its own inode and block count
-     * for -i and -s), and a dangling link falls through to the lstat() below
-     * so that it is listed rather than reported as an error.
+     * Chỉ theo symlink khi nó thực sự dẫn tới thư mục. Link tới file thường
+     * được in như link (với inode và số khối của chính nó cho -i và -s), và
+     * link treo rơi xuống lstat() bên dưới để được liệt kê chứ không báo lỗi.
      */
     if (ls_follow_operand(opt) && stat(path, &st) == 0) {
         if (S_ISDIR(st.st_mode)) {
@@ -250,10 +245,10 @@ int main(int argc, char **argv)
     int operand_count;
     int i;
 
-    /* Diagnostics name the program the way argv[0] does. */
+    /* Chẩn đoán gọi tên chương trình theo đúng argv[0]. */
     ls_set_program_name(argc > 0 ? argv[0] : NULL);
 
-    /* Dates, month names and the TZ variable have to be honoured. */
+    /* Phải tôn trọng locale (tên tháng, ngày) và biến TZ. */
     setlocale(LC_ALL, "");
 
     ls_options_init(&opt);
@@ -267,8 +262,8 @@ int main(int argc, char **argv)
 
     if (operand_count == 0) {
         /*
-         * "If no operands are given, the contents of the current directory
-         * are displayed."  With -d the current directory itself is the entry.
+         * "Nếu không có operand nào, hiện nội dung thư mục hiện tại."
+         * Với -d chính thư mục hiện tại là mục cần in.
          */
         if (opt.list_mode == LIST_FLAT) {
             struct stat st;
@@ -299,10 +294,9 @@ int main(int argc, char **argv)
     }
 
     /*
-     * "Non-directory operands are displayed first; directory and non-directory
-     * operands are sorted separately."  Both groups take part in the selected
-     * sort, so -t and -S order the operands just as they order the entries
-     * inside a directory.
+     * "Operand không-thư-mục in trước; operand thư-mục và không-thư-mục
+     * sắp riêng." Cả hai nhóm đều tham gia cách sắp đã chọn, nên -t và -S
+     * sắp xếp các operand hệt như sắp các mục trong thư mục.
      */
     if (files.len > 0) {
         ls_sort_entries(&files, &opt);
@@ -311,18 +305,15 @@ int main(int argc, char **argv)
     }
     ls_sort_entries(&dirs, &opt);
 
-    /*
-     * A header is only needed when more than one operand was given, or when
-     * -R produces several listings.  Otherwise the single listing is printed
-     * bare, which is the default mode of ls(1).
-     */
+    /* Chỉ cần header khi nhiều operand được đưa ra, hoặc -R sinh nhiều
+     * listing. Còn lại in trần, là chế độ mặc định của ls(1). */
     run.headers = (operand_count > 1) || (opt.list_mode == LIST_RECURSE);
     run.opt = &opt;
 
     /*
-     * The walk uses an explicit stack: operands go on first, in reverse, and
-     * every listing pushes its own sub-directories on top.  That yields a
-     * depth first traversal which finishes one operand before the next.
+     * Duyệt bằng stack tường minh: operand vào trước, theo thứ tự đảo, và
+     * mỗi listing đẩy các thư mục con của nó lên trên. Nhờ đó có được duyệt
+     * theo chiều sâu, xong một operand mới sang operand kế.
      */
     ls_queue_init(&queue);
     for (i = (int)dirs.len; i-- > 0;) {

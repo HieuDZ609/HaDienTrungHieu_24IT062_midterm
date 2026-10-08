@@ -1,5 +1,5 @@
 /*
- * listing.c -- reading directories and managing the entry collections.
+ * listing.c -- đọc thư mục và quản lý các bộ sưu tập mục.
  */
 
 #include "listing.h"
@@ -11,9 +11,9 @@
 #include <string.h>
 
 /*
- * Name used in diagnostics.  It is taken from argv[0] the way both NetBSD's
- * setprogname() and GNU's program_invocation_short_name do, so a binary
- * called "ls" reports "ls:" and one called "myls" reports "myls:".
+ * Tên dùng trong chẩn đoán, lấy từ argv[0] như setprogname() của NetBSD và
+ * program_invocation_short_name của GNU: binary tên "ls" báo "ls:", tên
+ * "myls" báo "myls:".
  */
 static const char *ls_progname = LS_PROGNAME;
 
@@ -134,10 +134,10 @@ bool ls_name_visible(const char *name, const ls_options_t *opt)
 }
 
 /*
- * "-f  Output is in directory order (not sorted)."  The kernel hands back
- * "." and ".." wherever its directory index happens to place them, but every
- * ls(1) that is compared against shows them first and the rest in readdir
- * order, so move them to the front when no sorting will happen anyway.
+ * "-f  Output is in directory order (not sorted)." Kernel trả "." và ".."
+ * ở vị trí tùy theo chỉ mục, nhưng ls(1) nào đem so cũng hiện chúng trước
+ * rồi mới đến phần còn lại theo thứ tự readdir; đưa chúng lên đầu vì dù
+ * sao cũng không có sắp xếp.
  */
 static void ls_hoist_dots(ls_list_t *list)
 {
@@ -204,7 +204,7 @@ int ls_read_directory(const char *dirpath, const ls_options_t *opt,
         char *path;
         bool have_stat;
 
-        /* errno must be cleared here so that NULL can only mean end of file. */
+        /* errno phải được xóa ở đây để NULL chỉ có thể là hết thư mục. */
         errno = 0;
         de = readdir(dir);
         if (de == NULL)

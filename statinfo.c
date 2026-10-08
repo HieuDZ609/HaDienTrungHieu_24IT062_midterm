@@ -1,9 +1,7 @@
 /*
- * statinfo.c -- turning struct stat into the strings ls(1) prints.
- *
- * Everything that needs a system call (getpwuid, getgrgid, readlink, the
- * BLOCKSIZE environment variable, localtime) is isolated here so the output
- * module can stay purely concerned with layout.
+ * statinfo.c -- biến struct stat thành các chuỗi ls(1) in ra.
+ * Mọi thứ cần system call (getpwuid, getgrgid, readlink, BLOCKSIZE,
+ * localtime) được gom ở đây để module in chỉ lo dàn trang.
  */
 
 #include "statinfo.h"
@@ -20,18 +18,16 @@
 #include <sys/sysmacros.h> /* major(), minor() */
 #endif
 
-/* The whiteout type is not part of POSIX; overlayfs still creates it. */
+/* Kiểu whiteout không thuộc POSIX; overlayfs vẫn có thể tạo nó. */
 #ifndef S_IFWHT
 #define S_IFWHT 0160000
 #endif
 
-/* Fallback unit when BLOCKSIZE is absent or unusable. */
+/* Đơn vị thay thế khi BLOCKSIZE vắng mặt hoặc không dùng được. */
 #define LS_DEFAULT_BLOCKSIZE 512ULL
 
-/*
- * Parse BLOCKSIZE once.  The manual allows a plain count or a k/m/g suffix;
- * anything we cannot understand falls back to the documented default.
- */
+/* Đọc BLOCKSIZE một lần: man page cho phép số trần hoặc hậu tố k/m/g;
+ * thứ không hiểu được thì quay về mặc định đã ghi. */
 static unsigned long long ls_parse_blocksize(void)
 {
     const char *raw = getenv("BLOCKSIZE");
@@ -69,7 +65,7 @@ static unsigned long long ls_parse_blocksize(void)
 
 unsigned long long ls_total_unit(void)
 {
-    static unsigned long long unit; /* 0 == not read yet */
+    static unsigned long long unit; /* 0 == chưa đọc */
 
     if (unit == 0)
         unit = ls_parse_blocksize();
@@ -107,7 +103,7 @@ char *ls_mode_string(mode_t mode, char *buf)
 {
     buf[0] = ls_type_char(mode);
 
-    /* Owner permissions, including the set-user-ID bit. */
+    /* Quyền của chủ, kèm bit set-user-ID. */
     buf[1] = (mode & S_IRUSR) ? 'r' : '-';
     buf[2] = (mode & S_IWUSR) ? 'w' : '-';
     if (mode & S_ISUID)
@@ -115,7 +111,7 @@ char *ls_mode_string(mode_t mode, char *buf)
     else
         buf[3] = (mode & S_IXUSR) ? 'x' : '-';
 
-    /* Group permissions, including the set-group-ID bit. */
+    /* Quyền của nhóm, kèm bit set-group-ID. */
     buf[4] = (mode & S_IRGRP) ? 'r' : '-';
     buf[5] = (mode & S_IWGRP) ? 'w' : '-';
     if (mode & S_ISGID)
@@ -123,7 +119,7 @@ char *ls_mode_string(mode_t mode, char *buf)
     else
         buf[6] = (mode & S_IXGRP) ? 'x' : '-';
 
-    /* Other permissions, including the sticky bit ('T' / 't'). */
+    /* Quyền của người khác, kèm sticky bit ('T' / 't'). */
     buf[7] = (mode & S_IROTH) ? 'r' : '-';
     buf[8] = (mode & S_IWOTH) ? 'w' : '-';
     if (mode & S_ISVTX)
@@ -136,13 +132,10 @@ char *ls_mode_string(mode_t mode, char *buf)
 }
 
 /*
- * Render "sizes ... in a human readable format" (-h): 512, 1.0K, 12M, 2.5G.
- *
- * The arithmetic is done entirely in integers so that no precision is lost
- * on large values and no rounding can drift below the requested precision:
- * the number is scaled with an exact ceiling division and then, below ten,
- * shown with one decimal digit rounded up.  1025 becomes 1.1K rather than
- * 1.0K, and 3076096 bytes becomes 3.0M rather than 2.9M.
+ * Hiện khối lượng "theo dạng người đọc" (-h): 512, 1.0K, 12M, 2.5G.
+ * Làm toàn bộ bằng số nguyên để không mất độ chính xác: chia thang đo với
+ * phép chia trần chính xác rồi, dưới 10, hiện một chữ số thập phân làm tròn
+ * lên. 1025 → 1.1K thay vì 1.0K; 3076096 byte → 3.0M thay vì 2.9M.
  */
 static void ls_humanize(unsigned long long bytes, char *buf, size_t buflen)
 {
@@ -174,7 +167,7 @@ static void ls_humanize(unsigned long long bytes, char *buf, size_t buflen)
     rest = bytes % scale[u];
 
     if (whole >= 10) {
-        /* "1024K", "11M": a whole unit is rounded up when anything is left. */
+        /* "1024K", "11M": còn dư là làm tròn lên cả đơn vị. */
         snprintf(buf, buflen, "%llu%c", whole + (rest != 0), units[u]);
         return;
     }
@@ -188,9 +181,8 @@ static void ls_humanize(unsigned long long bytes, char *buf, size_t buflen)
 }
 
 /*
- * Scale a byte count the way the current -h/-k/BLOCKSIZE setting asks for.
- * This is the single place that knows the three renderings, so the -s column
- * and the "total N" line can never disagree.
+ * Co đếm byte theo yêu cầu -h/-k/BLOCKSIZE hiện tại. Đây là nơi duy nhất
+ * biết cả ba cách hiện, nên cột -s và dòng "total N" không bao giờ lệch nhau.
  */
 static void ls_render_bytes(unsigned long long bytes, const ls_options_t *opt,
                             char *buf, size_t buflen)
@@ -219,7 +211,7 @@ void ls_format_byte_count(unsigned long long bytes, const ls_options_t *opt,
 void ls_format_blocks(const struct stat *st, const ls_options_t *opt,
                       char *buf, size_t buflen)
 {
-    /* st_blocks is counted in 512 byte units on every POSIX platform. */
+    /* st_blocks tính theo đơn vị 512 byte trên mọi nền POSIX. */
     ls_render_bytes((unsigned long long)st->st_blocks * 512ULL, opt, buf,
                     buflen);
 }
@@ -228,8 +220,8 @@ void ls_format_size(const struct stat *st, const ls_options_t *opt,
                     char *buf, size_t buflen)
 {
     /*
-     * "If the file is a character special or block special file, the major
-     * and minor device numbers for the file are displayed in the size field."
+     * "Nếu là character special hay block special, in major và minor trong
+     * cột size."
      */
     if (S_ISCHR(st->st_mode) || S_ISBLK(st->st_mode)) {
         snprintf(buf, buflen, "%llu, %llu",
@@ -244,7 +236,7 @@ void ls_format_size(const struct stat *st, const ls_options_t *opt,
         snprintf(buf, buflen, "%llu", (unsigned long long)st->st_size);
 }
 
-/* Three way comparison of two (second, nanosecond) stamps. */
+/* So sánh 3 chiều hai mốc (giây, nano). */
 static int ls_timespec_cmp(time_t asec, long ansec, time_t bsec, long bnsec)
 {
     if (asec != bsec)
@@ -276,13 +268,11 @@ void ls_format_time(const struct stat *st, const ls_options_t *opt,
     }
 
     /*
-     * A file younger than six months shows the time of day, an older one
-     * shows the year.  The cut off is half of 31556952, the number of
-     * seconds in a Gregorian year, exactly as the reference implementation
-     * computes it, and the comparison carries the nanoseconds as well: an
-     * entry whose stamp was refreshed a moment ago is still "recent", and a
-     * whole second comparison would push it into the other branch.  A file
-     * dated in the future is not recent either.
+     * File trẻ hơn sáu tháng hiện giờ trong ngày, già hơn hiện năm. Ngưỡng
+     * cắt là 31556952/2 (nửa số giây của một năm Gregorian), đúng như bản
+     * tham chiếu tính, và so sánh kèm cả nano: mốc vừa làm mới vẫn "gần đây",
+     * so ở độ chính xác giây sẽ đẩy sang nhánh kia. File định ngày tương lai
+     * cũng không coi là gần đây.
      */
     clock_gettime(CLOCK_REALTIME, &now);
     fmt = (ls_timespec_cmp(now.tv_sec - 31556952 / 2, now.tv_nsec,
@@ -310,8 +300,8 @@ void ls_owner_name(const struct stat *st, const ls_options_t *opt,
         }
     }
 
-    /* "-n ... owner and group IDs are displayed numerically" and unknown
-     * owners fall back to the numeric id as well. */
+    /* "-n ... hiện ID của chủ và nhóm dạng số" và chủ không tìm được cũng
+     * quay về hiện số. */
     snprintf(buf, buflen, "%u", (unsigned int)st->st_uid);
 }
 

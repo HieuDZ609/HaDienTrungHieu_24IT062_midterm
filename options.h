@@ -1,5 +1,5 @@
 /*
- * options.h -- command line parsing for ls(1).
+ * options.h -- phân tích dòng lệnh cho ls(1).
  */
 
 #ifndef LS_OPTIONS_H
@@ -7,30 +7,27 @@
 
 #include "ls_types.h"
 
-/* The exact option string from the manual's SYNOPSIS. */
+/* Đúng chuỗi option trong SYNOPSIS của man page. */
 #define LS_OPTSTRING "AacdFfhiklnqRrSstuw"
 
-/*
- * Fill opt with the defaults described in the manual (one entry per line,
- * lexicographical order, modification time, 512 byte blocks, ...).
- */
+/* Điền các mặc định trong man page (mỗi dòng một tên, theo từ điển, ...). */
 void ls_options_init(ls_options_t *opt);
 
 /*
- * Consume the option letters of argv.  Returns optind, i.e. the index of the
- * first operand.  An unknown option is reported on stderr and terminates the
- * program with a non-zero status, as the EXIT STATUS section requires.
+ * Tiêu thụ các chữ option của argv, trả về optind (chỉ số operand đầu tiên).
+ * Option lạ được báo ra stderr và kết thúc chương trình với mã khác 0,
+ * đúng như mục EXIT STATUS.
  */
 int ls_parse_args(int argc, char **argv, ls_options_t *opt);
 
 /*
- * Apply the two rules that cannot be decided while parsing:
- *   - -q/-w default to '?' on a terminal and to raw output elsewhere;
- *   - -A is always in effect for the super-user.
+ * Hai luật không quyết định được lúc parse:
+ *   - -q/-w mặc định '?' khi là terminal, raw khi không phải;
+ *   - -A luôn có hiệu lực với super-user.
  */
 void ls_options_finish(ls_options_t *opt);
 
-/* Print the usage line on stderr. */
+/* In dòng usage ra stderr. */
 void ls_usage(void);
 
 #endif /* LS_OPTIONS_H */

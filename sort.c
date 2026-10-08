@@ -1,9 +1,8 @@
 /*
- * sort.c -- ordering of the collected entries.
+ * sort.c -- sắp xếp các mục đã thu thập.
  *
- * A plain top-down merge sort is used instead of qsort() so that the options
- * can be passed to the comparator directly, without resorting to a global
- * variable, and so that the result is stable.
+ * Dùng merge sort top-down thay cho qsort(): truyền được option trực tiếp
+ * vào comparator (không cần biến toàn cục) và kết quả ổn định.
  */
 
 #include "sort.h"
@@ -11,11 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
- * Timestamp selected by -c / -u / -t.  The nanosecond part is kept so that
- * files touched within the same second still land in the right order, which
- * is what ls(1) does as well.
- */
+/* Timestamp chọn bởi -c/-u/-t. Giữ phần nano để các file đụng trong cùng
+ * giây vẫn vào đúng thứ tự, đúng như ls(1). */
 static struct timespec ls_entry_time(const ls_entry_t *entry,
                                      ls_time_kind_t kind)
 {
@@ -36,13 +32,11 @@ static struct timespec ls_entry_time(const ls_entry_t *entry,
 }
 
 /*
- * Three way comparison: negative when a should be printed first.
- *
- * -t sorts "most recently modified first" with the manual's lexicographical
- * order as the tie breaker, and -S sorts "largest file first" with no tie
- * breaker at all so that equal sizes keep the order they were read in.
- * -r is not handled here: it reverses the finished order, which is what
- * makes equal keys swap places too.
+ * So sánh 3 chiều: âm khi a in trước b.
+ * -t "sửa gần nhất trước", lấy thứ tự từ điển làm tiêu chí phụ; -S "lớn
+ * nhất trước" không tiêu chí phụ nên size bằng nhau giữ nguyên thứ tự đọc.
+ * -r không xử lý ở đây: nó đảo ngược thứ tự đã hoàn tất, chính điều đó làm
+ * các khóa bằng nhau cũng đổi chỗ.
  */
 static int ls_compare(const ls_entry_t *a, const ls_entry_t *b,
                       const ls_options_t *opt)
@@ -124,7 +118,7 @@ void ls_sort_entries(ls_list_t *list, const ls_options_t *opt)
     if (list->len < 2)
         return;
 
-    /* "-f  Output is not sorted."  Only the reversal below still applies. */
+    /* "-f  Output is not sorted." Chỉ phần đảo ngược dưới đây còn áp dụng. */
     if (opt->sort_kind != SORT_NONE) {
         scratch = malloc(list->len * sizeof(*scratch));
         if (scratch != NULL) {
@@ -134,9 +128,8 @@ void ls_sort_entries(ls_list_t *list, const ls_options_t *opt)
     }
 
     /*
-     * -r reverses the order that was just produced rather than negating the
-     * comparator, so entries that compare equal (two files of the same size
-     * under -S) swap places instead of staying where they were.
+     * -r đảo ngược thứ tự vừa tạo ra thay vì phủ định comparator, nên các
+     * mục bằng nhau (hai file cùng size với -S) đổi chỗ chứ không đứng yên.
      */
     if (opt->reverse) {
         for (i = 0, j = list->len; i + 1 < j; i++, j--) {

@@ -1,10 +1,7 @@
 /*
- * ls_types.h -- shared data types for the simplified ls(1) implementation.
- *
- * Every option group that the manual declares to "override each other" is
- * stored in exactly one field.  Because getopt() reports the options in the
- * order they appear on the command line, the "last one specified wins" rule
- * falls out of the assignment order for free.
+ * ls_types.h -- các kiểu dữ liệu dùng chung cho toàn bộ chương trình.
+ * Mỗi nhóm option "đè lẫn nhau" chỉ lưu trong một field; vì getopt() trả về
+ * option theo thứ tự trên dòng lệnh nên luật "cái cuối thắng" tự nhiên có được.
  */
 
 #ifndef LS_TYPES_H
@@ -15,66 +12,65 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-/* Name reported in diagnostics and in the usage message. */
+/* Tên dùng trong thông báo lỗi và usage. */
 #define LS_PROGNAME "myls"
 
 /*
- * Status used whenever something failed.  The manual only requires a value
- * greater than zero; 2 is what the system ls(1) returns, so a differential
- * test can compare the exit status as well as the output.
+ * Mã trả về khi có lỗi: man page chỉ đòi > 0; dùng 2 đúng như ls(1)
+ * để khớp exit status khi so sánh với /bin/ls.
  */
 #define LS_EXIT_FAILURE 2
 
-/* Which timestamp -t (sorting) and -l (printing) should use. */
+/* Timestamp dùng cho -t (sắp xếp) và -l (in ra). */
 typedef enum {
-    TIME_MTIME = 0, /* default: time of last modification */
-    TIME_ATIME,     /* -u: time of last access           */
-    TIME_CTIME      /* -c: time when status was changed  */
+    TIME_MTIME = 0, /* mặc định: lần sửa cuối    */
+    TIME_ATIME,     /* -u: lần truy cập cuối     */
+    TIME_CTIME      /* -c: lần đổi trạng thái    */
 } ls_time_kind_t;
 
-/* Output layout.  -l and -n override each other. */
+/* Kiểu in: -l và -n đè lẫn nhau. */
 typedef enum {
-    FORMAT_SHORT = 0,   /* default: one name per line  */
-    FORMAT_LONG,        /* -l                          */
-    FORMAT_LONG_NUMERIC /* -n: -l with numeric uid/gid */
+    FORMAT_SHORT = 0,   /* mặc định: mỗi dòng một tên */
+    FORMAT_LONG,        /* -l                         */
+    FORMAT_LONG_NUMERIC /* -n: -l với uid/gid dạng số */
 } ls_format_t;
 
-/* How directory operands are handled.  -R and -d override each other. */
+/* Cách xử lý operand là thư mục: -R và -d đè lẫn nhau. */
 typedef enum {
-    LIST_NORMAL = 0, /* descend into directory operands            */
-    LIST_RECURSE,    /* -R: also descend into every sub-directory  */
-    LIST_FLAT        /* -d: print directories as if they were files */
+    LIST_NORMAL = 0, /* duyệt vào thư mục operand                  */
+    LIST_RECURSE,    /* -R: còn duyệt mọi thư mục con              */
+    LIST_FLAT        /* -d: in thư mục như file thường             */
 } ls_list_mode_t;
 
-/* Rendering of non-printable bytes.  -q and -w override each other. */
+/* Byte không in được: -q và -w đè lẫn nhau. */
 typedef enum {
-    RAW_QUESTION = 0, /* -q: show them as '?' (default on a tty) */
-    RAW_LITERAL       /* -w: emit them verbatim (default off a tty) */
+    RAW_QUESTION = 0, /* -q: hiện '?' (mặc định khi stdout là tty) */
+    RAW_LITERAL       /* -w: in nguyên byte (mặc định khi ống/redirect) */
 } ls_raw_mode_t;
 
-/* Size rendering.  The rightmost of -h and -k wins. */
+/* Cách hiện dung lượng: trong -h và -k, cái bên phải thắng. */
 typedef enum {
-    SIZE_DEFAULT = 0, /* plain units, see ls_total_unit()  */
+    SIZE_DEFAULT = 0, /* đơn vị thường, xem ls_total_unit() */
     SIZE_HUMAN,       /* -h: 512, 1.0K, 2.5M, ...          */
-    SIZE_KILOBYTES    /* -k: rounded up to kilobytes        */
+    SIZE_KILOBYTES    /* -k: làm tròn lên tới kibibyte      */
 } ls_size_mode_t;
 
-/* Sorting strategy. */
+/* Chiến lược sắp xếp. */
 typedef enum {
-    SORT_LEX = 0, /* default: lexicographical */
-    SORT_NONE,    /* -f: leave readdir order alone */
+    SORT_LEX = 0, /* mặc định: theo từ điển */
+    SORT_NONE,    /* -f: giữ nguyên thứ tự readdir */
     SORT_TIME,    /* -t                          */
     SORT_SIZE     /* -S                          */
 } ls_sort_kind_t;
 
-/* Dot-file policy.  -a and -A override each other. */
+/* Chính sách file dot: -a và -A đè lẫn nhau. */
 typedef enum {
-    DOT_HIDE = 0, /* default: skip every name starting with '.' */
-    DOT_ALMOST,   /* -A: skip only '.' and '..'                 */
-    DOT_ALL       /* -a: skip nothing                           */
+    DOT_HIDE = 0, /* mặc định: bỏ mọi tên bắt đầu '.' */
+    DOT_ALMOST,   /* -A: chỉ bỏ '.' và '..'           */
+    DOT_ALL       /* -a: giữ tất cả                   */
 } ls_dot_mode_t;
 
-/* Fully resolved set of flags used by every other module. */
+/* Bộ option đã phân giải xong, mọi module khác dùng. */
 typedef struct {
     ls_dot_mode_t  dot_mode;
     ls_list_mode_t list_mode;
@@ -83,22 +79,22 @@ typedef struct {
     ls_size_mode_t size_mode;
     ls_sort_kind_t sort_kind;
     ls_raw_mode_t  raw_mode;
-    bool           raw_forced;   /* true once -q or -w was given   */
+    bool           raw_forced;   /* true khi người dùng đã ghi rõ -q hoặc -w */
     bool           print_inode;  /* -i */
     bool           print_blocks; /* -s */
     bool           suffix;       /* -F */
     bool           reverse;      /* -r */
 } ls_options_t;
 
-/* A directory entry together with the lstat() data collected for it. */
+/* Một mục thư mục cùng dữ liệu lstat() thu được. */
 typedef struct {
-    char       *name; /* name exactly as it will be printed  */
-    char       *path; /* path handed to lstat()              */
-    struct stat st;   /* valid only when stat_ok is true     */
+    char       *name; /* tên in ra, đúng như gốc      */
+    char       *path; /* đường dẫn truyền cho lstat() */
+    struct stat st;   /* chỉ hợp lệ khi stat_ok = true */
     bool        stat_ok;
 } ls_entry_t;
 
-/* Growable array of ls_entry_t. */
+/* Mảng động các ls_entry_t. */
 typedef struct {
     ls_entry_t *items;
     size_t      len;
