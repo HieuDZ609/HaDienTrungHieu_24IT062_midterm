@@ -92,6 +92,50 @@ NetBSD trên VM NetBSD 10.2, mọi mục qua khớp; lệch là 3 nhóm kiểu c
 
 ## Screenshots
 
-| Dựng từ GitHub | Chạy trên fixture | So với `/bin/ls` |
-| --- | --- | --- |
-| ![build](screenshots/1_build_from_github.png) | ![run](screenshots/2_run_against_fixture.png) | ![diff](screenshots/3_diff_vs_bin_ls.png) |
+### 1. Build từ GitHub
+
+![Build từ GitHub](screenshots/1_build_from_github.png)
+
+### 2. Chạy trên fixture
+
+![Chạy trên fixture](screenshots/2_run_against_fixture.png)
+
+### 3. So sánh với `/bin/ls`
+
+![So sánh với /bin/ls](screenshots/3_diff_vs_bin_ls.png)
+
+### 4. File dot (`-a` / `-A`)
+
+![File dot -a -A](screenshots/4_option_dotfiles.png)
+
+### 5. Format dài và sắp xếp (`-l` `-lt` `-ltr` `-t` `-u` `-S`)
+
+![Format dài và sắp xếp](screenshots/5_long_and_sort.png)
+
+### 6. Inode và kích thước (`-i` `-lhi` `-ils` `-lk`)
+
+![Inode và kích thước](screenshots/6_inodes_and_sizes.png)
+
+### 7. Phân loại, thư mục, link (`-F` `-d` symlink/hardlink)
+
+![Phân loại, thư mục, link](screenshots/7_classify_dirs_links.png)
+
+### 8. Đệ quy (`-R`)
+
+![Đệ quy -R](screenshots/8_recursive.png)
+
+### 9. Byte thô và tổ hợp (`-w` `-q` `-la` `-ast`)
+
+![Byte thô và tổ hợp](screenshots/9_raw_and_combos.png)
+
+### 10. Harness trên Linux
+
+![Harness trên Linux](screenshots/10_linux_harness.png)
+
+### 11. Các tùy chọn còn lại (`-c` `-f` `-n` `-r`)
+
+![Các tùy chọn còn lại](screenshots/11_remaining_options.png)
+
+### 12. Cấu trúc repo
+
+![Cấu trúc repo](screenshots/12_repo_structure.png)
