@@ -335,6 +335,14 @@ assignment's manual — which usually lands on GNU's side whenever NetBSD's
 The `-t`/`-r` sort families and `-S` by size alone behaved exactly like the
 system `ls`, and `-w` printed the raw unframed listing the manual demands.
 
+Screenshots of the actual NetBSD runs (source fetched straight from this
+repository's `main` branch, built with `bmake`/`gcc` 10.5.0, then run against
+a fixture tree and compared with `/bin/ls`):
+
+| build from the GitHub tree | long listing of the fixture | differential battery vs `/bin/ls` |
+| --- | --- | --- |
+| ![NetBSD build](screenshots/1_build_from_github.png) | ![NetBSD run](screenshots/2_run_against_fixture.png) | ![NetBSD battery](screenshots/3_diff_vs_bin_ls.png) |
+
 
 ## Repository
 
