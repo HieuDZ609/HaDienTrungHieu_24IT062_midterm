@@ -1,7 +1,7 @@
 # myls — phần cài đặt `ls(1)` đơn giản hóa
-
+# Hà Điền Trung Hiếu - 24IT062 - Midterm 
 Chương trình bài giữa kỳ: cài đặt lại tiện ích `ls(1)` theo trang man page của
-NetBSD đi kèm đề bài, viết từ đầu bằng C11, chỉ dùng giao diện POSIX.
+NetBSD đi kèm đề bài.
 
 ## Yêu cầu
 
@@ -39,7 +39,7 @@ Khi có từ hai operand trở lên (hoặc `-R`), mỗi thư mục được in 
 | `-a` | In tất cả, gồm cả `.` và `..` |
 | `-c` | Dùng thời điểm đổi trạng thái (cho `-t` và `-l`) |
 | `-d` | Thư mục operand in như file thường |
-| `-F` | Gắn hậu tố loại: `/` thư mục, `*` thực thi, `@` symlink, `=` socket, `\|` FIFO, `%` whiteout |
+| `-F` | Gắn hậu tố loại: `/` thư mục; `*` thực thi; `@` symlink; `=` socket; `\|` FIFO; `%` whiteout |
 | `-f` | Không sắp xếp, in theo thứ tự đọc; kéo theo `-a` |
 | `-h` | In kích thước dạng người đọc (`512`, `1.0K`, `12M`, `2.5G`) |
 | `-i` | In số inode mỗi mục |
